@@ -1,0 +1,24 @@
+name: 🐍 Python Secure CI
+
+on:
+  push:
+    paths: ['python-service/**'] # Solo corre si cambias algo en Python
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./python-app
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: 🛡️ Lint (Format)
+        run: flake8 .
+      - name: 🔍 Security Scan
+        run: bandit -r .

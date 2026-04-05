@@ -1,0 +1,22 @@
+name: 🟢 Node.js Secure CI
+
+on:
+  push:
+    paths: ['node-service/**'] # Solo corre si cambias algo en Node
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./node-app
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        run: npm ci
+      - name: 🛡️ Lint
+        run: npm run lint
