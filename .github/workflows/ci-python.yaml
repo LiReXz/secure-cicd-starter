@@ -2,23 +2,61 @@ name: 🐍 Python Secure CI
 
 on:
   push:
-    paths: ['python-service/**'] # Solo corre si cambias algo en Python
+    paths:
+      - 'python-service/**'
+      - '.github/workflows/ci-python.yaml'
+  pull_request:
+    paths:
+      - 'python-service/**'
+      - '.github/workflows/ci-python.yaml'
 
 jobs:
-  build-test:
+  lint-test-build:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./python-app
+        working-directory: ./python-service
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
+        id: setup
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Install dependencies
+        id: install
         run: pip install -r requirements.txt
+
       - name: 🛡️ Lint (Format)
+        id: lint
         run: flake8 .
+
+      - name: ✅ Unit Tests
+        id: tests
+        run: pytest -q
+
       - name: 🔍 Security Scan
+        id: security
         run: bandit -r .
+
+      - name: 🐳 Docker Build
+        id: docker
+        run: docker build -t secure-python-service:ci .
+
+      - name: 🧾 Quality Gate Summary
+        if: always()
+        run: |
+          echo "## Python Quality Gate Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Gate | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Setup Python | ${{ steps.setup.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Install | ${{ steps.install.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ steps.lint.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ steps.tests.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ${{ steps.security.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Build | ${{ steps.docker.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY

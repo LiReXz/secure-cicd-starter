@@ -1,0 +1,19 @@
+# Local tracking
+todo
+
+# Dependencies & Build
+node_modules/
+*.pyc
+__pycache__/
+.pytest_cache/
+dist/
+build/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp

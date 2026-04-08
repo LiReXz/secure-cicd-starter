@@ -2,21 +2,56 @@ name: 🟢 Node.js Secure CI
 
 on:
   push:
-    paths: ['node-service/**'] # Solo corre si cambias algo en Node
+    paths:
+      - 'node-service/**'
+      - '.github/workflows/ci-node.yaml'
+  pull_request:
+    paths:
+      - 'node-service/**'
+      - '.github/workflows/ci-node.yaml'
 
 jobs:
-  build-test:
+  lint-test-build:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./node-app
+        working-directory: ./node-service
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Node
+        id: setup
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - name: Install
-        run: npm ci
+        id: install
+        run: npm install
+
       - name: 🛡️ Lint
+        id: lint
         run: npm run lint
+
+      - name: ✅ Unit Tests
+        id: tests
+        run: npm test
+
+      - name: 🐳 Docker Build
+        id: docker
+        run: docker build -t secure-node-service:ci .
+
+      - name: 🧾 Quality Gate Summary
+        if: always()
+        run: |
+          echo "## Node.js Quality Gate Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Gate | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Setup Node | ${{ steps.setup.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Install | ${{ steps.install.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ steps.lint.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ steps.tests.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Build | ${{ steps.docker.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
